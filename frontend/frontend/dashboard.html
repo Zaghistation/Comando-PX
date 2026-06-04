@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMANDO PX — ZAGHISTATION</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080808;
+    --surface: #0f0f0f;
+    --panel: #141414;
+    --border: #1e1e1e;
+    --border-bright: #2a2a2a;
+    --amber: #c8860a;
+    --amber-dim: #7a5006;
+    --amber-glow: rgba(200,134,10,0.12);
+    --green: #1a7a3a;
+    --green-bright: #22a84e;
+    --red: #8a1a1a;
+    --text-primary: #d4c9b0;
+    --text-secondary: #6a6258;
+    --text-dim: #3a3630;
+    --white: #e8e0d0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* NOISE TEXTURE */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.4;
+  }
+
+  /* ══════════ HEADER ══════════ */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 56px;
+    background: rgba(8,8,8,0.95);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--amber);
+  }
+
+  .logo span {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px;
+    margin-left: 12px;
+    vertical-align: middle;
+  }
+
+  nav {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+
+  nav a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  nav a:hover { color: var(--amber); }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    background: var(--green-bright);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ══════════ HERO ══════════ */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 56px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 70% 50%, rgba(200,134,10,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 20% 80%, rgba(26,122,58,0.03) 0%, transparent 60%);
+  }
+
+  /* Road grid perspective */
+  .road-grid {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 50%;
+    background:
+      linear-gradient(to bottom, transparent 0%, rgba(200,134,10,0.02) 100%);
+    overflow: hidden;
+  }
+
+  .road-grid::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--amber-dim));
+  }
+
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 60px 80px 60px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    display: block;
+    width: 24px; height: 1px;
+    background: var(--amber);
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 8vw, 110px);
+    line-height: 0.9;
+    color: var(--white);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  h1 .accent {
+    color: var(--amber);
+    display: block;
+  }
+
+  .hero-subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    margin-top: 20px;
+    margin-bottom: 48px;
+    line-height: 1.8;
+    max-width: 400px;
+    border-left: 2px solid var(--border-bright);
+    padding-left: 16px;
+  }
+
+  .cta-group {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 32px;
+    background: var(--amber);
+    color: var(--black);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    background: #e09a0c;
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 13px 28px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-bright);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+
+  /* ══════════ HERO RIGHT — TERMINAL ══════════ */
+  .hero-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 60px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .terminal {
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--border-bright);
+    position: relative;
+    animation: fadeInUp 0.8s ease forwards;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+
+  .terminal-dots {
+    display: flex; gap: 6px;
+  }
+
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+
+  .dot-r { background: #3a1a1a; }
+  .dot-y { background: #3a3018; }
+  .dot-g { background: #1a3a24; }
+
+  .terminal-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    margin-left: 8px;
+  }
+
+  .terminal-body {
+    padding: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  .t-dim { color: var(--text-dim); }
+  .t-amber { color: var(--amber); }
+  .t-green { color: var(--green-bright); }
+  .t-white { color: var(--text-primary); }
+  .t-red { color: #c84a4a; }
+
+  .t-line { display: flex; gap: 12px; }
+  .t-label { color: var(--text-dim); min-width: 120px; }
+
+  .progress-bar {
+    display: inline-block;
+    width: 100px;
+    height: 6px;
+    background: var(--border);
+    position: relative;
+    top: 1px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--amber);
+  }
+
+  .progress-fill.green { background: var(--green-bright); }
+
+  .separator {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 12px 0;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--amber);
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ══════════ METRICS STRIP ══════════ */
+  .metrics-strip {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--surface);
+  }
+
+  .metric-item {
+    padding: 32px 40px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+
+  .metric-item:last-child { border-right: none; }
+
+  .metric-item:hover { background: rgba(200,134,10,0.03); }
+
+  .metric-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--amber);
+    transform: scaleY(0);
+    transition: transform 0.3s;
+    transform-origin: bottom;
+  }
+
+  .metric-item:hover::before { transform: scaleY(1); }
+
+  .metric-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    color: var(--white);
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .metric-value .unit {
+    font-size: 18px;
+    color: var(--amber);
+  }
+
+  .metric-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* ══════════ HOW IT WORKS ══════════ */
+  .section {
+    padding: 100px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 5vw, 64px);
+    color: var(--white);
+    letter-spacing: 2px;
+    margin-bottom: 48px;
+  }
+
+  /* Flow steps */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    position: relative;
+    margin-top: 64px;
+  }
+
+  .flow-connector {
+    position: absolute;
+    top: 28px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(to right, var(--border), var(--amber-dim), var(--border));
+  }
+
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 16px;
+    position: relative;
+    z-index: 2;
+    animation: fadeInUp 0.6s ease backwards;
+  }
+
+  .flow-step:nth-child(2) { animation-delay: 0.1s; }
+  .flow-step:nth-child(3) { animation-delay: 0.2s; }
+  .flow-step:nth-child(4) { animation-delay: 0.3s; }
+  .flow-step:nth-child(5) { animation-delay: 0.4s; }
+
+  .step-number {
+    width: 56px; height: 56px;
+    border: 1px solid var(--border-bright);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .flow-step.active .step-number {
+    border-color: var(--amber);
+    background: var(--amber-glow);
+    box-shadow: 0 0 20px rgba(200,134,10,0.15);
+  }
+
+  .step-icon {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .step-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--white);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ══════════ DASHBOARD PREVIEW ══════════ */
+  .dashboard-preview {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 80px 60px;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .dash-card {
+    background: var(--panel);
+    padding: 28px 32px;
+  }
+
+  .dash-card.span-col {
+    grid-column: span 1;
+  }
+
+  .dash-card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dash-card-label span {
+    color: var(--amber);
+  }
+
+  /* Chart bars */
+  .mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 80px;
+  }
+
+  .bar {
+    flex: 1;
+    background: var(--border-bright);
+    position: relative;
+    min-height: 4px;
+    transition: background 0.3s;
+  }
+
+  .bar:hover { background: var(--amber-dim); }
+  .bar.active { background: var(--amber); }
+
+  .bar-label {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* Score display */
+  .score-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    color: var(--amber);
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+
+  .score-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .score-delta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--green-bright);
+    margin-top: 12px;
+  }
+
+  /* Recent entries */
+  .entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .entry:last-child { border-bottom: none; }
+
+  .entry-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-primary);
+  }
+
+  .entry-cat {
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .entry-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    text-align: right;
+  }
+
+  .entry-value.red { color: #c84a4a; }
+  .entry-value.green { color: var(--green-bright); }
+
+  /* Gauge */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 8px;
+  }
+
+  .gauge {
+    width: 100px; height: 50px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gauge svg {
+    width: 100%; height: 200%;
+    position: absolute;
+    top: 0;
+  }
+
+  .gauge-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--amber);
+    text-align: center;
+    margin-top: 8px;
+    letter-spacing: 2px;
+  }
+
+  .gauge-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ══════════ PAIN SECTION ══════════ */
+  .pain-section {
+    padding: 100px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .pain-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 64px;
+  }
+
+  .pain-card {
+    padding: 40px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .pain-card:hover { border-color: var(--amber-dim); }
+
+  .pain-card.solution {
+    border-color: var(--amber-dim);
+    background: rgba(200,134,10,0.03);
+  }
+
+  .pain-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    margin-bottom: 20px;
+    display: inline-block;
+  }
+
+  .pain-tag.before {
+    color: #c84a4a;
+    border: 1px solid #3a1a1a;
+  }
+
+  .pain-tag.after {
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+  }
+
+  .pain-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--white);
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  .pain-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pain-list li {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding-left: 20px;
+    position: relative;
+    line-height: 1.6;
+  }
+
+  .pain-list li::before {
+    position: absolute;
+    left: 0;
+    font-size: 10px;
+  }
+
+  .before li::before { content: '✕'; color: #c84a4a; }
+  .after li::before { content: '→'; color: var(--amber); }
+
+  /* ══════════ CTA FINAL ══════════ */
+  .cta-section {
+    border-top: 1px solid var(--border);
+    padding: 100px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(200,134,10,0.05) 0%, transparent 70%);
+  }
+
+  .cta-section h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 6vw, 80px);
+    color: var(--white);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .cta-section p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    margin-bottom: 48px;
+    position: relative;
+  }
+
+  /* ══════════ FOOTER ══════════ */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--black);
+  }
+
+  .footer-brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: var(--text-dim);
+  }
+
+  .footer-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* ══════════ SCROLL ANIMATIONS ══════════ */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ══════════ RESPONSIVE ══════════ */
+  @media (max-width: 768px) {
+    header { padding: 0 20px; }
+    nav { display: none; }
+
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { display: none; }
+    .hero-left { padding: 60px 24px; }
+
+    .metrics-strip { grid-template-columns: 1fr 1fr; }
+    .metric-item { padding: 24px; }
+
+    .section { padding: 60px 24px; }
+
+    .flow { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .flow-connector { display: none; }
+
+    .dashboard-grid { grid-template-columns: 1fr; }
+
+    .pain-section { padding: 60px 24px; }
+    .pain-grid { grid-template-columns: 1fr; gap: 24px; }
+
+    .cta-section { padding: 60px 24px; }
+    footer { padding: 24px; flex-direction: column; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    ZAGHISTATION <span>// COMANDO PX</span>
+  </div>
+  <nav>
+    <a href="#como-funciona">Como funciona</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#entrar">Entrar</a>
+    <a href="#entrar" style="color:var(--amber)"><span class="status-dot"></span>MVP ATIVO</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="road-grid"></div>
+
+  <div class="hero-left">
+    <div class="eyebrow">Sistema operacional do motorista</div>
+    <h1>
+      SEUS DADOS<br>
+      <span class="accent">SUA ROTA</span>
+    </h1>
+    <p class="hero-subtitle">
+      Você gera dados o tempo inteiro na estrada.<br>
+      Combustível. Manutenção. Despesas. Rotas.<br>
+      Mas esses dados ficam no esquecimento.<br>
+      <br>
+      O Comando PX organiza tudo pelo WhatsApp.
+    </p>
+    <div class="cta-group">
+      <a href="https://wa.me/" class="btn-primary" id="entrar">
+        ▶ Começar agora — WhatsApp
+      </a>
+      <a href="#como-funciona" class="btn-ghost">Ver como funciona</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <div class="terminal-title">COMANDO PX — RELATÓRIO SEMANAL</div>
+      </div>
+      <div class="terminal-body">
+        <div class="t-line">
+          <span class="t-dim">→</span>
+          <span class="t-amber">SEMANA 47 / 2025</span>
+        </div>
+        <div class="t-line">
+          <span class="t-dim">MOTORISTA</span>
+          <span class="t-white">CRISTIANO Z.</span>
+        </div>
+        <hr class="separator">
+        <div class="t-line">
+          <span class="t-label t-dim">KM RODADOS</span>
+          <span class="t-green">2.847 km</span>
+        </div>
+        <div class="t-line">
+          <span class="t-label t-dim">ABASTEC.</span>
+          <span class="t-white">R$ 1.240,00</span>
+        </div>
+        <div class="t-line">
+          <span class="t-label t-dim">ALIMENTAÇÃO</span>
+          <span class="t-white">R$ 187,50</span>
+        </div>
+        <div class="t-line">
+          <span class="t-label t-dim">PEDÁGIOS</span>
+          <span class="t-white">R$ 312,00</span>
+        </div>
+        <div class="t-line">
+          <span class="t-label t-dim">OUTROS</span>
+          <span class="t-white">R$ 89,00</span>
+        </div>
+        <hr class="separator">
+        <div class="t-line">
+          <span class="t-label t-dim">TOTAL CUSTO</span>
+          <span class="t-amber" style="font-weight:600">R$ 1.828,50</span>
+        </div>
+        <div class="t-line">
+          <span class="t-label t-dim">MÉDIA KM</span>
+          <span class="t-white">R$ 0,64/km</span>
+        </div>
+        <hr class="separator">
+        <div class="t-line">
+          <span class="t-label t-dim">SCORE PX</span>
+          <span class="t-amber">
+            <div class="progress-bar" style="display:inline-block"><div class="progress-fill" style="width:78%"></div></div>
+            &nbsp;782
+          </span>
+        </div>
+        <div class="t-line">
+          <span class="t-label t-dim">DISCIPLINA</span>
+          <span class="t-green">
+            <div class="progress-bar" style="display:inline-block"><div class="progress-fill green" style="width:91%"></div></div>
+            &nbsp;91%
+          </span>
+        </div>
+        <hr class="separator">
+        <div class="t-line">
+          <span class="t-dim">$&gt;</span>
+          <span class="t-amber">próxima rota: MERCOSUL<span class="cursor"></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS STRIP -->
+<div class="metrics-strip">
+  <div class="metric-item reveal">
+    <div class="metric-value">R$<span class="unit">0</span></div>
+    <div class="metric-label">Custo para começar</div>
+  </div>
+  <div class="metric-item reveal">
+    <div class="metric-value">3<span class="unit">min</span></div>
+    <div class="metric-label">Para registrar uma despesa</div>
+  </div>
+  <div class="metric-item reveal">
+    <div class="metric-value">7<span class="unit">dias</span></div>
+    <div class="metric-label">Para ter seu 1º relatório</div>
+  </div>
+  <div class="metric-item reveal">
+    <div class="metric-value">100<span class="unit">%</span></div>
+    <div class="metric-label">WhatsApp — sem instalar nada</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div id="como-funciona">
+<div class="section">
+  <div class="section-label">Fluxo operacional</div>
+  <div class="section-title reveal">COMO FUNCIONA</div>
+
+  <div class="flow">
+    <div class="flow-connector"></div>
+
+    <div class="flow-step active">
+      <div class="step-number">01</div>
+      <div class="step-icon">📱</div>
+      <div class="step-title">Você manda</div>
+      <div class="step-desc">Foto de nota fiscal ou áudio com o gasto. Direto no WhatsApp.</div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number">02</div>
+      <div class="step-icon">🤖</div>
+      <div class="step-title">IA lê</div>
+      <div class="step-desc">OCR + IA extrai valor, categoria e data automaticamente.</div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number">03</div>
+      <div class="step-icon">📊</div>
+      <div class="step-title">Planilha atualiza</div>
+      <div class="step-desc">Google Sheets centraliza tudo em tempo real. Sem digitação.</div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number">04</div>
+      <div class="step-icon">📈</div>
+      <div class="step-title">Dashboard gera</div>
+      <div class="step-desc">Visão clara de custos, rotas e eficiência operacional.</div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number">05</div>
+      <div class="step-icon">⭐</div>
+      <div class="step-title">Score cresce</div>
+      <div class="step-desc">Histórico acumula. Seu score PX reflete disciplina real.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- DASHBOARD PREVIEW -->
+<div class="dashboard-preview" id="dashboard">
+  <div style="max-width:1200px; margin:0 auto;">
+    <div class="section-label">Visão operacional</div>
+    <div class="section-title reveal">SEU DASHBOARD</div>
+
+    <div class="dashboard-grid reveal">
+
+      <!-- Gastos por semana -->
+      <div class="dash-card">
+        <div class="dash-card-label">Gastos semanais (R$) <span>↗ -12% vs semana ant.</span></div>
+        <div class="mini-chart" style="height:100px; margin-bottom:24px;">
+          <div class="bar" style="height:45%"><span class="bar-label">S1</span></div>
+          <div class="bar" style="height:72%"><span class="bar-label">S2</span></div>
+          <div class="bar" style="height:58%"><span class="bar-label">S3</span></div>
+          <div class="bar" style="height:91%"><span class="bar-label">S4</span></div>
+          <div class="bar active" style="height:78%"><span class="bar-label">S5</span></div>
+          <div class="bar" style="height:34%"><span class="bar-label">S6</span></div>
+          <div class="bar" style="height:62%"><span class="bar-label">S7</span></div>
+          <div class="bar" style="height:48%"><span class="bar-label">S8</span></div>
+        </div>
+        <div class="entry-list" style="margin-top:28px;">
+          <div class="entry">
+            <div><div class="entry-name">Combustível — Posto Ipiranga</div><div class="entry-cat">Abastecimento · Seg</div></div>
+            <div class="entry-value red">-R$ 420,00</div>
+          </div>
+          <div class="entry">
+            <div><div class="entry-name">Marmitex — Posto Gasolina BR</div><div class="entry-cat">Alimentação · Ter</div></div>
+            <div class="entry-value red">-R$ 18,50</div>
+          </div>
+          <div class="entry">
+            <div><div class="entry-name">Pedagio SP-330</div><div class="entry-cat">Pedágio · Qua</div></div>
+            <div class="entry-value red">-R$ 14,80</div>
+          </div>
+          <div class="entry">
+            <div><div class="entry-name">Frete recebido — Carga São Paulo</div><div class="entry-cat">Receita · Qui</div></div>
+            <div class="entry-value green">+R$ 3.200,00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="dash-card">
+        <div class="dash-card-label">Score PX <span>▲ +23 pts</span></div>
+        <div class="score-big">782</div>
+        <div class="score-label">Nível: Ouro</div>
+        <div class="score-delta">▲ +23 pts esta semana</div>
+
+        <hr class="separator" style="margin-top:24px;">
+
+        <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-secondary);">DISCIPLINA</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--amber);">91%</span>
+            </div>
+            <div style="height:3px; background:var(--border); width:100%;">
+              <div style="height:100%; width:91%; background:var(--amber);"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-secondary);">CONSISTÊNCIA</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--amber);">76%</span>
+            </div>
+            <div style="height:3px; background:var(--border); width:100%;">
+              <div style="height:100%; width:76%; background:var(--amber);"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-secondary);">EFICIÊNCIA</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--green-bright);">84%</span>
+            </div>
+            <div style="height:3px; background:var(--border); width:100%;">
+              <div style="height:100%; width:84%; background:var(--green-bright);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KM / consumo -->
+      <div class="dash-card">
+        <div class="dash-card-label">KM & Consumo</div>
+        <div class="gauge-wrap">
+          <div class="gauge">
+            <svg viewBox="0 0 100 50">
+              <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e1e1e" stroke-width="8" stroke-linecap="round"/>
+              <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#c8860a" stroke-width="8" stroke-linecap="round"
+                stroke-dasharray="126" stroke-dashoffset="32"/>
+            </svg>
+          </div>
+          <div class="gauge-value">74%</div>
+          <div class="gauge-sub">eficiência de rota</div>
+        </div>
+
+        <hr class="separator" style="margin-top:20px;">
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+          <div class="entry" style="padding:6px 0;">
+            <div><div class="entry-name" style="font-size:10px;">KM rodados (semana)</div></div>
+            <div class="entry-value" style="font-size:14px;">2.847</div>
+          </div>
+          <div class="entry" style="padding:6px 0;">
+            <div><div class="entry-name" style="font-size:10px;">Custo por km</div></div>
+            <div class="entry-value" style="font-size:14px;">R$ 0,64</div>
+          </div>
+          <div class="entry" style="padding:6px 0; border-bottom:none;">
+            <div><div class="entry-name" style="font-size:10px;">Média km/l</div></div>
+            <div class="entry-value green" style="font-size:14px;">2,3 km/l</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PAIN vs SOLUTION -->
+<div class="pain-section">
+  <div class="section-label">A dor real</div>
+  <div class="section-title reveal">ANTES & DEPOIS</div>
+
+  <div class="pain-grid">
+    <div class="pain-card reveal">
+      <div class="pain-tag before">Antes do Comando PX</div>
+      <h3>A ESTRADA SEM DADOS</h3>
+      <ul class="pain-list before">
+        <li>Notas fiscais perdidas no bolso ou na boléia</li>
+        <li>Sem noção de quanto gastou na semana</li>
+        <li>Imposto de renda vira pesadelo no final do ano</li>
+        <li>Não sabe qual rota tem mais custo real</li>
+        <li>Nada pra mostrar pra embarcador ou banco</li>
+        <li>Sentimento de trabalhar muito sem acumular nada</li>
+      </ul>
+    </div>
+
+    <div class="pain-card solution reveal">
+      <div class="pain-tag after">Com o Comando PX</div>
+      <h3>OPERAÇÃO SOB CONTROLE</h3>
+      <ul class="pain-list after">
+        <li>Foto no WhatsApp → dado organizado automaticamente</li>
+        <li>Dashboard semanal gerado sem esforço</li>
+        <li>Histórico completo para declaração e crédito</li>
+        <li>Custos reais por rota visíveis no painel</li>
+        <li>Score de reputação que cresce com disciplina</li>
+        <li>Dados reais virando ativo financeiro e profissional</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- FINAL CTA -->
+<div class="cta-section">
+  <h2>QUEM ORGANIZA<br>SEUS DADOS<br><span style="color:var(--amber)">ORGANIZA SUA VIDA</span></h2>
+  <p>7 dias. Sem instalar nada. Só o WhatsApp que você já usa.</p>
+  <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; position:relative;">
+    <a href="https://wa.me/" class="btn-primary" style="font-size:12px; padding:16px 40px;">
+      ▶ Entrar no Comando PX
+    </a>
+  </div>
+  <div style="margin-top:32px; font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-dim); letter-spacing:2px;">
+    MVP · WhatsApp + Make.com + Google Sheets + IA · ZAGHISTATION 2025
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">ZAGHISTATION</div>
+  <div class="footer-meta">Comando PX · Rota 80/20 · Guerreiro Pi</div>
+  <div class="footer-meta">Quem vive a operação entende o dado.</div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  reveals.forEach(el => observer.observe(el));
+
+  // Animate bars on scroll
+  const chartObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const bars = entry.target.querySelectorAll('.bar');
+        bars.forEach((bar, i) => {
+          const h = bar.style.height;
+          bar.style.height = '0%';
+          bar.style.transition = `height 0.5s ease ${i * 0.06}s`;
+          setTimeout(() => { bar.style.height = h; }, 50);
+        });
+        chartObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.mini-chart').forEach(el => chartObserver.observe(el));
+</script>
+</body>
+</html>
